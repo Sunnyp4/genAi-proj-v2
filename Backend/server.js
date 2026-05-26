@@ -3,6 +3,7 @@ require('dotenv').config()
 const app=require('./src/app')
 const connectDB=require('./src/config/db')
 const cookieParser=require('cookie-parser');
+const cors = require('cors')
 
 app.use(cors({
   origin: [
