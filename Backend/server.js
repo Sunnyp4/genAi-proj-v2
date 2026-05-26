@@ -4,11 +4,16 @@ const app=require('./src/app')
 const connectDB=require('./src/config/db')
 const cookieParser=require('cookie-parser');
 const cors=require('cors');
+app.options("*", cors());
 
 app.use(cors({
-    origin:'http://localhost:5173', 
-    credentials:true
+  origin: [
+    "http://localhost:5173", // local dev
+    "https://gen-ai-proj-v2.vercel.app" // production frontend ✅
+  ],
+  credentials: true
 }));
+
 
 app.use(cookieParser());
 connectDB();
