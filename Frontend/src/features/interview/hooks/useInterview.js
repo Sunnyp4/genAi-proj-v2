@@ -2,6 +2,7 @@ import { getAllInterviewReports, generateInterviewReport, getInterviewReportById
 import { useContext, useEffect } from "react"
 import { InterviewContext } from "../interview.context"
 import { useParams } from "react-router"
+import { toast } from 'react-toastify'
 
 
 export const useInterview = () => {
@@ -62,30 +63,45 @@ console.log(response,'resssssss>>>>>>>>>>>>>>>>>...')
     }
 
    const getResumePdf = async (interviewReportId) => {
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const response = await generateResumePdf({ interviewReportId });
+    try {
+        const response = await generateResumePdf({ interviewReportId });
 
-    const url = window.URL.createObjectURL(
-      new Blob([response], { type: "application/pdf" })
-    );
+        // ✅ SUCCESS CASE
+        const url = window.URL.createObjectURL(
+            new Blob([response], { type: "application/pdf" })
+        );
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `resume_${interviewReportId}.pdf`;
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `resume_${interviewReportId}.pdf`;
+        link.click();
 
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    } catch (error) {
 
-  } catch (error) {
-    console.log(error);
-  } finally {
-    setLoading(false);
-  }
+        // ✅ IMPORTANT FIX: read blob error
+        if (error.response?.data) {
+            const text = await error.response.data.text(); // convert blob → text
+            const errJson = JSON.parse(text);
+
+            console.log("FULL ERROR:", errJson);
+            toast.error(`
+${errJson.message}
+
+${errJson.error}
+
+${errJson.stack}
+            `);
+        } else {
+            console.log(error);
+            alert("Unknown error occurred");
+        }
+
+    } finally {
+        setLoading(false);
+    }
 };
-``
 
     useEffect(() => {
         if (interviewId) {

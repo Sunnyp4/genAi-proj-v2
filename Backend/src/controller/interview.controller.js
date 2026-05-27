@@ -1,5 +1,5 @@
 const pdfParse = require('pdf-parse');
-const {generateContent,generateResumePdf} = require('../services/ai.service');
+const { generateContent, generateResumePdf } = require('../services/ai.service');
 const InterviewReportModel = require('../models/interviewReport.model')
 
 async function generateInterviewReportController(req, res) {
@@ -17,8 +17,8 @@ async function generateInterviewReportController(req, res) {
         userId: req.user.id,
         jobDescription,
         resume: resumeData.text,
-        selfDescription,...interviewReport
-     });
+        selfDescription, ...interviewReport
+    });
     await newReport.save();
 
     res.status(200).json({ message: "Interview report generated successfully", newReport });
@@ -32,28 +32,28 @@ async function getAllInterviewReportsController(req, res) {
     } catch (error) {
         console.error("Error retrieving interview reports:", error);
         res.status(500).json({ message: "Failed to retrieve interview reports" });
-}
+    }
 }
 
 async function getInterviewReportByIdController(req, res) {
-    const {id}=req.params;
-    try{
-        const interviewReport = await InterviewReportModel.findOne({_id:id,userId:req.user.id});
-        if(!interviewReport){
-            return res.status(404).json({message:'Interview report not found'})
+    const { id } = req.params;
+    try {
+        const interviewReport = await InterviewReportModel.findOne({ _id: id, userId: req.user.id });
+        if (!interviewReport) {
+            return res.status(404).json({ message: 'Interview report not found' })
         }
-        res.status(200).json({message:'Interview report retrieved successfully',newReport:interviewReport})
+        res.status(200).json({ message: 'Interview report retrieved successfully', newReport: interviewReport })
     } catch (error) {
         console.error("Error retrieving interview report:", error);
         res.status(500).json({ message: "Failed to retrieve interview report" });
     }
 }
 async function getResumePdfController(req, res) {
-    const {id}=req.params;
-    try{
-        const interviewReport = await InterviewReportModel.findOne({_id:id,userId:req.user.id});
-        if(!interviewReport){
-            return res.status(404).json({message:'Interview report not found'})
+    const { id } = req.params;
+    try {
+        const interviewReport = await InterviewReportModel.findOne({ _id: id, userId: req.user.id });
+        if (!interviewReport) {
+            return res.status(404).json({ message: 'Interview report not found' })
         }
         const pdfBuffer = await generateResumePdf(interviewReport);
         res.set({
@@ -65,10 +65,16 @@ async function getResumePdfController(req, res) {
     }
     catch (error) {
         console.error("Error generating resume PDF:", error);
-        res.status(500).json({ message: "Failed to generate resume PDF" });
+
+        res.status(500).json({
+            message: "Error generating resume PDF",
+            error: error.message,
+            stack: error.stack   // ✅ include full stack trace
+        });
     }
+
 
 }
 
 
-module.exports={generateInterviewReportController, getAllInterviewReportsController, getInterviewReportByIdController,getResumePdfController}
+module.exports = { generateInterviewReportController, getAllInterviewReportsController, getInterviewReportByIdController, getResumePdfController }

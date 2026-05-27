@@ -207,7 +207,7 @@ async function generateResumePdf(interviewReport) {
     return pdfBuffer;
   } catch(err){
     console.error("Error generating resume PDF:", err);
-    throw new Error("Failed to generate resume PDF");
+    throw new Error(err);
   }
 }
 
