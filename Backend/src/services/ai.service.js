@@ -2,7 +2,7 @@ const { GoogleGenAI } = require('@google/genai');
 const { z, int } = require('zod');
 const { zodToJsonSchema } = require('zod-to-json-schema')
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
+const puppeteer = require("puppeteer-core")
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_API_KEY
@@ -165,27 +165,67 @@ ${selfDescription}
 `;
 
 
-    try{
+    try {
         const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+            model: 'gemini-3.1-flash-lite',
 
-        contents: prompt,
+            contents: prompt,
 
-        config: {
-            responseMimeType: 'application/json',
+            config: {
+                responseMimeType: 'application/json',
 
-            responseJsonSchema: interviewPrepSchema
-        }
-    });
+                responseJsonSchema: interviewPrepSchema
+            }
+        });
 
-    const data = JSON.parse(response.text);
-    return data;
+        const data = JSON.parse(response.text);
+        return data;
     }
-    catch(err){
+    catch (err) {
         console.error("Error generating content:", err);
         throw new Error("Failed to generate interview preparation data");
     }
 }
 
-module.exports = generateContent
+const jsonSchema = zodToJsonSchema(z.object({html:z.string().describe("the HTML content of the resume which can be coverted to PDF using libraries like pdfkit or puppeteer")}))
+
+async function generateResumePdf(interviewReport) {
+  const prompt = `Generate a resume for the candidate based on the following interview report: ${JSON.stringify(interviewReport)}. Return ONLY the HTML content of the resume without any explanations or markdown which can be coverted to PDF using libraries like pdfkit or puppeteer. Follow the exact JSON schema: ${JSON.stringify(jsonSchema)}`
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: prompt,
+        generationConfig: {
+            responseMimeType: 'application/json',
+            responseJsonSchema: jsonSchema
+        }
+    });
+    const data = response.text;
+    
+    const pdfBuffer = await genaratePDFfromHTML(data);
+    console.log("Generated resume HTML:", pdfBuffer);
+    return pdfBuffer;
+  } catch(err){
+    console.error("Error generating resume PDF:", err);
+    throw new Error("Failed to generate resume PDF");
+  }
+}
+
+async function genaratePDFfromHTML(htmlContent) {
+  const browser = await puppeteer.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: true
+  });
+
+  const page = await browser.newPage();
+  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+  const pdfBuffer = await page.pdf({ format: 'A4' });
+
+  await browser.close();
+  return pdfBuffer;
+}
+
+
+module.exports = { generateContent, generateResumePdf }
 
