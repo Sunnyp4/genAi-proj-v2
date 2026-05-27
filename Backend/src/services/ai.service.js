@@ -1,6 +1,7 @@
 const { GoogleGenAI } = require('@google/genai');
 const { z, int } = require('zod');
 const { zodToJsonSchema } = require('zod-to-json-schema')
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 
 const ai = new GoogleGenAI({
@@ -139,8 +140,8 @@ const interviewPrepSchema = {
 };
 
 
-async function generateContent( resume, jobDescription, selfDescription) {
-   const prompt = `
+async function generateContent(resume, jobDescription, selfDescription) {
+    const prompt = `
 Generate interview preparation data STRICTLY in the provided JSON schema format.
 
 IMPORTANT RULES:
@@ -164,20 +165,26 @@ ${selfDescription}
 `;
 
 
-    const response = await ai.models.generateContent({
-    model: 'gemini-3.1-flash-lite-preview',
+    try{
+        const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite-preview',
 
-    contents: prompt,
+        contents: prompt,
 
-    config: {
-        responseMimeType: 'application/json',
+        config: {
+            responseMimeType: 'application/json',
 
-        responseJsonSchema: interviewPrepSchema
+            responseJsonSchema: interviewPrepSchema
+        }
+    });
+
+    const data = JSON.parse(response.text);
+    return data;
     }
-});
-
-const data = JSON.parse(response.text);
-return data;
+    catch(err){
+        console.error("Error generating content:", err);
+        throw new Error("Failed to generate interview preparation data");
+    }
 }
 
 module.exports = generateContent

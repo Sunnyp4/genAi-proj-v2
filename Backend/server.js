@@ -21,7 +21,7 @@ connectDB();
 const authRouter=require('./src/routes/auth.routes')
 app.use('/api/auth',authRouter)
 const interviewRouter=require('./src/routes/interview.routes')
-
+console.log("✅ INTERVIEW ROUTER LOADED");
 app.use('/api/interview', interviewRouter);
 
 

@@ -3,6 +3,7 @@ const generateContent = require('../services/ai.service');
 const InterviewReportModel = require('../models/interviewReport.model')
 
 async function generateInterviewReportController(req, res) {
+    console.log("✅ generateInterviewReportController called");
     const resume = req.file;
     const { jobDescription, selfDescription } = req.body;
     const resumeData = await (new pdfParse.PDFParse(Uint8Array.from(resume.buffer))).getText();
