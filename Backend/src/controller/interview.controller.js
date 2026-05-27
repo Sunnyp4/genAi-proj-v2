@@ -8,7 +8,7 @@ async function generateInterviewReportController(req, res) {
     const { jobDescription, selfDescription } = req.body;
     const resumeData = await (new pdfParse.PDFParse(Uint8Array.from(resume.buffer))).getText();
 
-    if (!resume || !jobDescription || !selfDescription) {
+    if ((!resume || !selfDescription) && !jobDescription) {
         return res.status(400).json({ message: "All fields are required" });
     }
 
