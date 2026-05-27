@@ -2,8 +2,7 @@ const { GoogleGenAI } = require('@google/genai');
 const { z, int } = require('zod');
 const { zodToJsonSchema } = require('zod-to-json-schema')
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-const puppeteer = require("puppeteer-core")
-const chromium = require("chrome-aws-lambda")
+const PDFDocument = require("pdfkit");
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_API_KEY
@@ -188,51 +187,108 @@ ${selfDescription}
     }
 }
 
-const jsonSchema = zodToJsonSchema(z.object({html:z.string().describe("the HTML content of the resume which can be coverted to PDF using libraries like pdfkit or puppeteer")}))
+async function generateResumeData(interviewReport) {
+    const prompt = `
+Generate a professional resume JSON using this data:
 
-async function generateResumePdf(interviewReport) {
-  const prompt = `Generate a resume for the candidate based on the following interview report: ${JSON.stringify(interviewReport)}. Return ONLY the HTML content of the resume without any explanations or markdown which can be coverted to PDF using libraries like pdfkit or puppeteer. Follow the exact JSON schema: ${JSON.stringify(jsonSchema)}`
-  try {
+${JSON.stringify(interviewReport)}
+
+Return ONLY JSON in this exact format:
+
+{
+  "name": "string",
+  "contact": "string",
+  "summary": "string",
+  "skills": ["string"],
+  "experience": ["string"],
+  "projects": ["string"],
+  "education": ["string"]
+}
+`;
+
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+        model: "gemini-3.1-flash-lite",
         contents: prompt,
         generationConfig: {
-            responseMimeType: 'application/json',
-            responseJsonSchema: jsonSchema
+            responseMimeType: "application/json"
         }
     });
-    const data = response.text;
-    
-    const pdfBuffer = await genaratePDFfromHTML(data);
-    console.log("Generated resume HTML:", pdfBuffer);
+
+    return JSON.parse(response.text);
+}
+
+
+
+
+async function generatePDF(resume) {
+  const doc = new PDFDocument({ margin: 40 });
+
+  const buffers = [];
+
+  doc.on("data", buffers.push.bind(buffers));
+
+  // ✅ HEADER
+  doc.font("Helvetica-Bold")
+     .fontSize(20)
+     .text(resume.name || "Name", { align: "center" });
+
+  doc.moveDown(0.5);
+
+  doc.font("Helvetica")
+     .fontSize(10)
+     .text(resume.contact || "", { align: "center" });
+
+  doc.moveDown();
+
+  // ✅ Section helper
+  const section = (title, items) => {
+    doc.moveDown();
+    doc.font("Helvetica-Bold")
+       .fontSize(14)
+       .text(title);
+
+    doc.moveDown(0.5);
+
+    if (Array.isArray(items)) {
+      doc.font("Helvetica").fontSize(10);
+      items.forEach((item) => {
+        doc.text(`• ${item}`, { lineGap: 3 });
+      });
+    } else {
+      doc.font("Helvetica").fontSize(10).text(items || "");
+    }
+  };
+
+  // ✅ CONTENT
+  section("Summary", resume.summary);
+  section("Skills", resume.skills);
+  section("Experience", resume.experience);
+  section("Projects", resume.projects);
+  section("Education", resume.education);
+
+  doc.end();
+
+  return new Promise((resolve) => {
+    doc.on("end", () => {
+      resolve(Buffer.concat(buffers));
+    });
+  });
+}
+
+async function generateResumePdf(interviewReport) {
+  try {
+    const resumeData = await generateResumeData(interviewReport);
+
+    const pdfBuffer = await generatePDF(resumeData);
+
     return pdfBuffer;
-  } catch(err){
+
+  } catch (err) {
     console.error("Error generating resume PDF:", err);
-    throw new Error(err);
+    throw err;  // ✅ keep original error
   }
 }
-
-
-async function genaratePDFfromHTML(htmlContent) {
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath, // ✅ CRITICAL
-    headless: chromium.headless
-  });
-
-  const page = await browser.newPage();
-
-  await page.setContent(htmlContent, {
-    waitUntil: "networkidle0"
-  });
-
-  const pdfBuffer = await page.pdf({ format: "A4" });
-
-  await browser.close();
-
-  return pdfBuffer;
-}
+``
 
 
 
