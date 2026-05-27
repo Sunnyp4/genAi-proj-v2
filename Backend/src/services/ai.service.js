@@ -3,6 +3,7 @@ const { z, int } = require('zod');
 const { zodToJsonSchema } = require('zod-to-json-schema')
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const puppeteer = require("puppeteer-core")
+const chromium = require("chrome-aws-lambda")
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_API_KEY
@@ -211,20 +212,28 @@ async function generateResumePdf(interviewReport) {
   }
 }
 
+
 async function genaratePDFfromHTML(htmlContent) {
   const browser = await puppeteer.launch({
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: true
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath, // ✅ CRITICAL
+    headless: chromium.headless
   });
 
   const page = await browser.newPage();
-  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
-  const pdfBuffer = await page.pdf({ format: 'A4' });
+  await page.setContent(htmlContent, {
+    waitUntil: "networkidle0"
+  });
+
+  const pdfBuffer = await page.pdf({ format: "A4" });
 
   await browser.close();
+
   return pdfBuffer;
 }
+
 
 
 module.exports = { generateContent, generateResumePdf }
