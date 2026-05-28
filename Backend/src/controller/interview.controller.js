@@ -1,5 +1,5 @@
 const pdfParse = require('pdf-parse');
-const { generateContent, generateResumePdf } = require('../services/ai.service');
+const { generateContent, generateResumePdf,runAgentPipeline,generatePDF } = require('../services/ai.service');
 const InterviewReportModel = require('../models/interviewReport.model')
 
 async function generateInterviewReportController(req, res) {
@@ -12,12 +12,16 @@ async function generateInterviewReportController(req, res) {
         return res.status(400).json({ message: "All fields are required" });
     }
 
-    const interviewReport = await generateContent(resumeData.text, jobDescription, selfDescription);
+    const interviewReport = await runAgentPipeline({ resume: resumeData.text, jobDescription, selfDescription });
     const newReport = new InterviewReportModel({
         userId: req.user.id,
         jobDescription,
         resume: resumeData.text,
-        selfDescription, ...interviewReport
+        selfDescription,technicalQuestions:interviewReport?.questions?.technical,
+        behavioralQuestions:interviewReport?.questions?.behavioral,
+        skillGaps:interviewReport?.analysis?.missingSkills,
+        preparationPlans:interviewReport?.preparationPlans?.preparationPlans,
+        matchScore:interviewReport?.analysis?.matchScore
     });
     await newReport.save();
 

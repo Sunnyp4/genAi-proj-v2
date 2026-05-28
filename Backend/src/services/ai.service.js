@@ -3,6 +3,13 @@ const { z, int } = require('zod');
 const { zodToJsonSchema } = require('zod-to-json-schema')
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const PDFDocument = require("pdfkit");
+const plannerAgent = require('./agents/planner');
+const analyzeAgent = require('./agents/analyzer');
+
+const question = require("./agents/question");
+const preparationPlanAgent = require("./agents/preparation");
+const resumeAgent = require("./agents/resume");
+
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_API_KEY
@@ -288,9 +295,31 @@ async function generateResumePdf(interviewReport) {
     throw err;  // ✅ keep original error
   }
 }
-``
+async function runAgentPipeline(input) {
+    const plan=await plannerAgent(input);
+    let context={};
+    for(let step of plan.steps){
+        if(step==="analyze"){
+            const analysis=await analyzeAgent(input);
+            context.analysis=analysis;
+        }
+        else if(step==="questions"){
+            const questions=await question(context.analysis);
+            context.questions=questions;
+        }
+        else if(step==="preparationPlan"){
+            const preparationPlans=await preparationPlanAgent(context.analysis.missingSkills);
+            context.preparationPlans=preparationPlans;
+        }   
+        else if(step==="resume"){
+            const resume=await resumeAgent(context);
+            context.resume=resume;
+        }
+    }
+    return context;
+}
 
 
 
-module.exports = { generateContent, generateResumePdf }
+module.exports = { generateContent, generateResumePdf ,runAgentPipeline,generatePDF}
 

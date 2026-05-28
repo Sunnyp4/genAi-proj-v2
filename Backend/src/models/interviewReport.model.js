@@ -3,7 +3,6 @@ const mongoose=require('mongoose');
 
 const technicalQuestionSchema=new mongoose.Schema({
     question:{type:String,required:[true,'Question is required']},
-    intention:{type:String,required:[true,'Intention is required']},
     answer:{type:String,required:[true,'Answer is required']},
 },{
     _id:false
@@ -12,18 +11,11 @@ const technicalQuestionSchema=new mongoose.Schema({
 
 const behavioralQuestionSchema=new mongoose.Schema({
       question:{type:String,required:[true,'Question is required']},
-    intention:{type:String,required:[true,'Intention is required']},
     answer:{type:String,required:[true,'Answer is required']},
 },{
     _id:false
 })
 
-const skillGapSchema=new mongoose.Schema({
-    skill:{type:String,required:[true,'Skill is required']},
-    severity:{type:String,enum:['Low','Medium','High'],required:[true,'Severity is required']}
-},{
-    _id:false
-})
 
 const preparationPlanSchema=new mongoose.Schema({
     day:{
@@ -52,7 +44,10 @@ const interviewReportSchema=new mongoose.Schema({
     },
     technicalQuestions:[technicalQuestionSchema],
     behavioralQuestions:[behavioralQuestionSchema],
-    skillGaps:[skillGapSchema],
+    skillGaps:{
+    type: [String],
+    required: [true, 'Skill gaps are required']
+},
     preparationPlans:[preparationPlanSchema],
     userId:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true}
 },{

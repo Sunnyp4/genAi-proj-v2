@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 const QuestionCard = ({ item, index }) => {
-    const [ open, setOpen ] = useState(false)
+    const [open, setOpen] = useState(false)
     return (
         <div className='q-card'>
             <div className='q-card__header' onClick={() => setOpen(o => !o)}>
@@ -25,10 +25,6 @@ const QuestionCard = ({ item, index }) => {
             </div>
             {open && (
                 <div className='q-card__body'>
-                    <div className='q-card__section'>
-                        <span className='q-card__tag q-card__tag--intention'>Intention</span>
-                        <p>{item.intention}</p>
-                    </div>
                     <div className='q-card__section'>
                         <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
                         <p>{item.answer}</p>
@@ -58,9 +54,10 @@ const RoadMapDay = ({ day }) => (
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const Interview = () => {
-    const [ activeNav, setActiveNav ] = useState('technical')
-    const { report, getReportById, loading, getResumePdf,getReports } = useInterview()
+    const [activeNav, setActiveNav] = useState('technical')
+    const { report, getReportById, loading, getResumePdf, getReports } = useInterview()
     const { interviewId } = useParams()
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (interviewId) {
@@ -68,8 +65,8 @@ const Interview = () => {
         } else {
             getReports()
         }
-    }, [ interviewId ])
-    console.log('reeeeee',report)
+    }, [interviewId])
+    console.log('reeeeee', report)
 
 
 
@@ -105,6 +102,22 @@ const Interview = () => {
                             </button>
                         ))}
                     </div>
+                    <div><button
+                        onClick={() => navigate(-1)}
+                        className='button secondary-button'
+                    >
+                        <svg
+                            height={"0.8rem"}
+                            style={{ marginRight: "0.5rem" }}
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path d="M10.8284 12 15.7782 16.9497 14.364 18.364 8 12 14.364 5.63604 15.7782 7.05025 10.8284 12Z"></path>
+                        </svg>
+
+                        Back
+                    </button></div>
                     <button
                         onClick={() => { getResumePdf(interviewId) }}
                         className='button primary-button' >
@@ -182,8 +195,8 @@ const Interview = () => {
                         <p className='skill-gaps__label'>Skill Gaps</p>
                         <div className='skill-gaps__list'>
                             {report.skillGaps.map((gap, i) => (
-                                <span key={i} className={`skill-tag skill-tag--${gap.severity}`}>
-                                    {gap.skill}
+                                <span key={i} className={`skill-tag skill-tag--`}>
+                                    {gap}
                                 </span>
                             ))}
                         </div>
